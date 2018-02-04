@@ -1,0 +1,133 @@
+{
+  "name": "dynamic-dockerizer-master",
+  "version": "0.0.1",
+  "description": "Master component of Dynamic Dockerizer",
+  "main": "dist",
+  "scripts": {
+    "dev": "nodemon -w src --exec \"babel-node src --presets es2015,stage-0\"",
+    "build": "babel src -s -D -d dist --presets es2015,stage-0",
+    "start": "node dist",
+    "prestart": "npm run -s build",
+    "test": "eslint src",
+    "tfjson": "terraform fmt assets/clone.tf && cat assets/clone.tf | ./node_modules/hcl-to-json/bin/hcltojson.js > assets/clone.tf.json"
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "parserOptions": {
+      "ecmaVersion": 6,
+      "sourceType": "module"
+    },
+    "env": {
+      "node": true
+    },
+    "rules": {
+      "array-callback-return": "warn",
+      "brace-style": [
+        "error",
+        "1tbs"
+      ],
+      "complexity": [
+        "warn",
+        20
+      ],
+      "eqeqeq": "error",
+      "guard-for-in": "error",
+      "indent": [
+        "error",
+        2
+      ],
+      "linebreak-style": [
+        "error",
+        "unix"
+      ],
+      "no-array-constructor": "error",
+      "no-console": "warn",
+      "no-lonely-if": "warn",
+      "no-loop-func": "warn",
+      "no-mixed-spaces-and-tabs": [
+        "error"
+      ],
+      "no-nested-ternary": "error",
+      "no-spaced-func": "error",
+      "no-trailing-spaces": "error",
+      "semi": [
+        "error",
+        "always"
+      ],
+      "space-before-blocks": "error",
+      "space-before-function-paren": [
+        "error",
+        "never"
+      ],
+      "keyword-spacing": [
+        "error"
+      ],
+      "curly": [
+        "error",
+        "all"
+      ],
+      "no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "next"
+        }
+      ],
+      "no-const-assign": "error",
+      "no-use-before-define": [
+        "error",
+        "nofunc"
+      ],
+      "block-scoped-var": "error",
+      "prefer-const": "error",
+      "prefer-template": "warn",
+      "template-curly-spacing": [
+        "error",
+        "never"
+      ],
+      "no-confusing-arrow": [
+        "error",
+        {
+          "allowParens": true
+        }
+      ],
+      "arrow-parens": [
+        "error",
+        "as-needed"
+      ],
+      "arrow-body-style": [
+        "error",
+        "as-needed"
+      ],
+      "generator-star-spacing": [
+        "error",
+        "after"
+      ],
+      "require-yield": "error"
+    }
+  },
+  "repository": "thailekha/dynamic-dockerizer-master",
+  "author": "Thai Le <thailekha@yahoo.com>",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.6.0",
+    "aws-sdk": "^2.177.0",
+    "body-parser": "^1.13.3",
+    "compression": "^1.5.2",
+    "cors": "^2.7.1",
+    "express": "^4.13.3",
+    "express-fileupload": "^0.3.0",
+    "jsonfile": "^4.0.0",
+    "morgan": "^1.8.0",
+    "resource-router-middleware": "^0.6.0",
+    "shelljs": "^0.8.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.9.0",
+    "babel-core": "^6.9.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "eslint": "^3.1.1",
+    "hcl-to-json": "^0.1.1",
+    "nodemon": "^1.9.2"
+  }
+}
