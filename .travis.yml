@@ -1,0 +1,18 @@
+jobs:
+  include:
+    # =======================
+    # Code quality scans (start)
+    # =======================
+    -
+      if: type IN (push)
+      dist: trusty
+      language: bash
+      addons:
+        sonarcloud:
+          organization: "thailekha-github"
+          token:
+            secure: "RO7rfVtdRTOOIRe88Q3TIcVL2eO1kgR7NYofjNFOoWGgYsfi8yEA84C4t0qy2e6RBD6z3k2F5+aKpPf65lrIGCXeEG4ar/bHlHbUSQtkGQ1vn9xqUePfdahjtOog9LY3/22bMG8mEmJbjgW0FxIq1fVZvwjrf1uCMIJg0EPr4u7ngQO/nGqtVm/lAdtMA68MrW1um8QIYUUHmEBzr3jltBIx/ybCVV1zIfi/f2dGFYd5cl47AOlT297pWhnhZyoy6gfrUivWV/tNMpT4feB4FttnP9ZsGTqMLbx/6tnJRUIV+ep/bkg/FtBTkpGFOxHvfwuuA6q7fZa4X3URtih1RR95oAfKZQwGFuNc7y9nK58ySGqVJ3iCdfNAKOqVqDSTm2n3qilcBVgNecjpFpeCJw8sKcp1jSy4LWepdWUITnhinxeFY/gz8tZnGUYIPpMUmz9doQehp+CIR6lQQ5Jn5oARuG3O7v8oCBcgZCh2uKqiXInKDqVaOu3sZl6ZS/YxiYC+MbARmGPyArvahOgb+hVUBwKU6vXFBcSqY1MMmL205Z3EUzJMdUqY7wptOtsFV9k/ttwxTvUHw0W7E21opp5pnacgUnTPDckDjICu8YSYF7boduALDt7bm9oDBOQ+FUt9aI2pBOCZ895iByqeNgvCmVDq62G5SCcrappVzxg="
+      script:
+      - sonar-scanner --debug
+    # =======================
+    # Code quality scans (end)
