@@ -1,10 +1,10 @@
 {
   "name": "dynamic-dockerizer-master",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Master component of Dynamic Dockerizer",
   "main": "dist",
   "scripts": {
-    "dev": "nodemon -w src --exec \"babel-node src --presets es2015,stage-0\"",
+    "dev": "DEBUG=express:* nodemon -L -w src --exec \"babel-node src --presets es2015,stage-0\"",
     "build": "babel src -s -D -d dist --presets es2015,stage-0",
     "start": "node dist",
     "prestart": "npm run -s build",
@@ -119,7 +119,8 @@
     "jsonfile": "^4.0.0",
     "morgan": "^1.8.0",
     "resource-router-middleware": "^0.6.0",
-    "shelljs": "^0.8.1"
+    "shelljs": "^0.8.1",
+    "write": "^1.0.3"
   },
   "devDependencies": {
     "babel-cli": "^6.9.0",

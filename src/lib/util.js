@@ -1,3 +1,5 @@
+import {exec} from 'shelljs';
+
 const VERBOSE = 2;
 const DEBUG = VERBOSE >= 2;
 const INFO = VERBOSE >= 1;
@@ -41,3 +43,21 @@ export const logger = {
     }
   }
 };
+
+export function shell(command, cb) {
+  exec(command, {silent:true}, (code, stdout, stderr) => {
+    logger.info(command);
+    logger.debug(`stdout: ${stdout}`);
+    logger.debug(`stderr: ${stderr}`);
+
+    if (code !== 0) {
+      return cb({command, exitCode: code, stderr});
+    }
+
+    cb(null, stdout);
+  });
+}
+
+export function workspaceDir(accessKeyId) {
+  return `/dd-master/${accessKeyId}`;
+}

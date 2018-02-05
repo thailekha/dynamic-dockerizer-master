@@ -1,8 +1,5 @@
 import {getUser, getInstances, cloneInstance} from './ec2/index';
 
-function workspaceDir(accessKeyId) {
-  return `/dd-master/${accessKeyId}`;
-}
 
 function creds(req, apiVersion) {
   return {
@@ -32,9 +29,10 @@ export function ec2Handler(router) {
   });
 
   router.post('/clone', (req, res) => {
+    req.connection.setTimeout( 1000 * 60 * 6 );
+
     const opts = {
       creds: creds(req, '2016-11-15'),
-      workspace: workspaceDir(req.body.accessKeyId),
       InstanceId: req.body.InstanceId,
       keyFile: req.files.keyFile,
       accessKeyId: req.body.accessKeyId,
@@ -45,7 +43,7 @@ export function ec2Handler(router) {
 
     cloneInstance(opts, err => {
       if (err) {
-        return res.status(err.code).send(err.message);
+        return res.status(404).send(err);
       }
 
       res.send('hello world');
