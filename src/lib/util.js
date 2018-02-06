@@ -61,3 +61,11 @@ export function shell(command, cb) {
 export function workspaceDir(accessKeyId) {
   return `/dd-master/${accessKeyId}`;
 }
+
+export function creds(req, apiVersion) {
+  return {
+    accessKeyId: req.body.accessKeyId,
+    secretAccessKey: req.body.secretAccessKey,
+    apiVersion: apiVersion
+  };
+}

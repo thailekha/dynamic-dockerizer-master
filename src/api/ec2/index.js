@@ -5,18 +5,6 @@ import {logger, shell, workspaceDir} from '../../lib/util';
 import AWS from 'aws-sdk';
 AWS.config.update({region: 'eu-west-1'});
 
-export function getUser(creds, username, cb) {
-  new AWS.IAM(creds)
-    .getUser({
-      UserName: username
-    }, (err, data) => {
-      if (err) {
-        return cb(err);
-      }
-      cb(null, data);
-    });
-}
-
 export function filterRunningInstances(data) {
   return data
     .Reservations
