@@ -1,9 +1,7 @@
-import { Router } from 'express';
-import { ec2Handler } from './ec2';
+import ec2 from './ec2';
+import iam from './iam';
 
 export default function buildAPI(server) {
-  const router = Router({mergeParams:true});
-  ec2Handler(router);
-
-  server.use('/ec2', router);
+  server.use('/iam', iam);
+  server.use('/ec2', ec2);
 }

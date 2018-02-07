@@ -1,6 +1,6 @@
 {
   "name": "dynamic-dockerizer-master",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Master component of Dynamic Dockerizer",
   "main": "dist",
   "scripts": {
@@ -120,6 +120,7 @@
     "morgan": "^1.8.0",
     "resource-router-middleware": "^0.6.0",
     "shelljs": "^0.8.1",
+    "swagger-jsdoc": "^1.9.7",
     "write": "^1.0.3"
   },
   "devDependencies": {
