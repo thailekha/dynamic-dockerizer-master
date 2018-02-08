@@ -117,6 +117,7 @@
     "cors": "^2.7.1",
     "express": "^4.13.3",
     "express-fileupload": "^0.3.0",
+    "file-exists": "^5.0.1",
     "jsonfile": "^4.0.0",
     "morgan": "^1.8.0",
     "resource-router-middleware": "^0.6.0",

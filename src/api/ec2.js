@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import {getInstances, cloneInstance} from './ec2/index';
+import {getInstances, cloneInstance, targetImportedAndCloned} from './ec2/index';
 import {creds} from '../lib/util';
 
 const router = Router({mergeParams:true});
@@ -32,6 +32,16 @@ router.post('/clone', (req, res) => {
     }
 
     res.send('hello world');
+  });
+});
+
+router.post('/verify', (req, res) => {
+  targetImportedAndCloned(req.body.accessKeyId, (err, importedAndCloned) => {
+    if (err) {
+      return res.status(404).send(err);
+    }
+
+    res.status(200).json({message: `Target${importedAndCloned ? ' ' : ' NOT '}imported and cloned`});
   });
 });
 

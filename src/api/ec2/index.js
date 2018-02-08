@@ -2,6 +2,7 @@ import async from 'async';
 import jsonfile from 'jsonfile';
 import writeFile from 'write';
 import {logger, shell, workspaceDir} from '../../lib/util';
+import fileExists from 'file-exists';
 import AWS from 'aws-sdk';
 AWS.config.update({region: 'eu-west-1'});
 
@@ -31,6 +32,35 @@ export function getInstances(creds, cb) {
 
       cb(null, filterRunningInstances(instances));
     });
+}
+
+export function validWorkspace(accessKeyId, cb) {
+  const workspace = workspaceDir(accessKeyId);
+  async.every([//`${workspace}`,
+    `${workspace}/clone.tf.json`,
+    `${workspace}/installAgent.sh`,
+    `${workspace}/keyFile.pem`,
+    `${workspace}/sample.tfvars.json`,
+    `${workspace}/shared_credentials`,
+  ], function(filePath, callback) {
+    fileExists(filePath, (err, exists) => {
+      if (err) {
+        callback(err);
+      }
+
+      if (!exists) {
+        logger.debug(`${filePath} not exists`);
+      }
+
+      callback(null, exists);
+    });
+  }, function(err, allFilesExist) {
+    if (err) {
+      cb(err);
+    }
+
+    cb(null, allFilesExist);
+  });
 }
 
 export function cloneInstance(opts, cb) {
@@ -138,7 +168,7 @@ export function cloneInstance(opts, cb) {
     },
     function(callback) {
       logger.debug('Show target');
-      terraformShowTarget(accessKeyId, (err, stdout) => {
+      terraformShow(accessKeyId, 'aws_instance.target',(err, stdout) => {
         if (err) {
           return callback(err);
         }
@@ -190,6 +220,48 @@ export function cloneInstance(opts, cb) {
   });
 }
 
+export function targetImportedAndCloned(accessKeyId, cb) {
+  let importedAndCloned;
+
+  async.series([
+    function(callback) {
+      validWorkspace(accessKeyId, (err, workspaceIsValid) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (!workspaceIsValid) {
+          return callback('Request workspace is not valid');
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      async.every(['aws_instance.target','aws_instance.cloned'], function(resource, asyncCallback) {
+        terraformShow(accessKeyId, resource, (err, stdout) => {
+          if (err) {
+            return asyncCallback(err);
+          }
+          asyncCallback(null, stdout.length > 0);
+        });
+      }, function(err, result) {
+        if (err) {
+          return callback(err);
+        }
+        importedAndCloned = result;
+        callback(null);
+      });
+    }
+  ],
+  function(err) {
+    if (err) {
+      return cb(err);
+    }
+    cb(null, importedAndCloned);
+  });
+}
+
 function terraformContainerCmd(accessKeyId, cmd) {
   const fullCmd = `cd ${workspaceDir(accessKeyId)} && docker run --rm -v "$PWD:/request" --entrypoint /bin/ash hashicorp/terraform:light -c "cd request && ${cmd}"`;
   logger.debug(fullCmd);
@@ -206,8 +278,8 @@ export function terraformInit(accessKeyId, cb) {
   });
 }
 
-export function terraformShowTarget(accessKeyId, cb) {
-  shell(terraformContainerCmd(accessKeyId, 'terraform state show -var-file=sample.tfvars.json aws_instance.target'), (err, stdout) => {
+export function terraformShow(accessKeyId, resource, cb) {
+  shell(terraformContainerCmd(accessKeyId, `terraform state show -var-file=sample.tfvars.json ${resource}`), (err, stdout) => {
     if (err) {
       return cb(err);
     }
@@ -240,10 +312,10 @@ export function plan(accessKeyId, cb) {
     }
     shell(`cd ${workspaceDir(accessKeyId)} &&
       terraform plan -var-file=sample.tfvars.json`, err => {
-        if (err) {
-          return cb(err);
-        }
-        cb(null);
-      });
+      if (err) {
+        return cb(err);
+      }
+      cb(null);
+    });
   });
 }
