@@ -3,6 +3,7 @@ aws_common: &aws_common
   - secure: "aiDSqJC0aZp9A+ytR+3EAXO+/uPfMpKLRCA0Gtx8r2O9mpmFd3qeNjxGyhjTSqBQy1jFpTjy0zi1ZtAaYOdrM6OMSFWPGOx9NfWKLKHJ4JP2pY7Mo5wwiGRvFLQfvf//2OzhX765aaGwJSVgBdOyniQPQtmoVvJuEKlGP6aJCyEAZX3W2Vyt286TxUGwaUbomGMJvc/ljHecV+SZb8ANIXFgs/mERaBbpHyKQ1LFBX+I5kzSuB86i9AMcUEEs/ckGc58mxPFgjs6jnXponv4AG58NVp4HN4kEW4Jezch5Qw5DA4B77++vrKFfUEWuE0FYa0nqeo/TSX/wwDg/1SkMDgVny+UwGxPaTM32wKfhuOrpMwzw89+XgK0xO+bB1akFfCXr+TE0/4LxV67KmSpcBR9WPMMAsInBKYP5PEKw3cLrDUL/FMP2ZyGodaGNsseUxuxhtLcWpEEy8a1qHdUZzLmx+CkTN/nvh/e2zq64sC3u7kZaCML53npFtT8gGAk7C61yOwonlGdQlWaRghd+hNURTtY9YqMe8uDfO6zakEDEqdfPBOuaApPPmJQ64PVVuQU1+XLGNneSjaBLzGTyAtQ1f4V0BjfN5aNdHAQAKej0jWw/wTUG9A/8/qsywnPFKM6hwx5Or6klkeqgh4TdIoTFHB+5HWk1iw4vVxvkYk="
   - secure: "Uxw/jspO8/G9EPS22VJfNe/4+V4kAJcwGEAz0oN9I3oXMaV3wi/FH6zHnQFZcqcHM4oyXI+0VQskxUMtZ10M3GBvvY87AFSDz9cChlJtvSQ8JbL0gnGDO0N9w4s6TVpaA4qcFqFh3HtoZ5G3Dakqg/yumXaHDGmmihMvUnSEVb3EG4ZW4MAtpzOiVezpmLCN9NmnXcfB07VwpJrn9uJqpNG9Tv5kVXFtg4L1faI9gq021w8BawTYE/vaM1zxAtDE+8emE58P4lzPngxdByJwA0JU/3OauT7565wpLlUTAE20WB9OLPKg/PWLpTvbEwPcQJkeNpYaSlXioi8zgcCoyeSWcxGpEwiixRikO9SmsA/89XVSZd/jaO6RdUv3kK2/wFcAwM//f4k0NYJq3hr88eaX3tXgWz/xpsH1Ny8OHCPJIyt3H1riyYf6PYigUjj/ClFJ7RZLc6kylxoDRX1JCLud6jl6KdaaxCWrGuYRFC8W67m1naxQ+UeRnogf8dMU6ROowpFmwKu10oWl9reL39APxAGldZtQcwW+SyHYi7Wb+bf/eRZI5wnatNDyqm/W39Ark5wOcGlWSTMftFY2TJiyZaBF+arH5QJ/D8kZ8JCoYgVyMez+xVldlEclC5qAhFMBdu/gfzSavZY90oO+IdIRA47X/BZ6cN4z/FgRw3U="
   - AWS_DEFAULT_REGION=eu-west-1
+  - AWS_USER_NAME=dd-cicd
   - PATH=$HOME/.local/bin:$PATH
   before_install:
   - pip install --user awscli
@@ -60,7 +61,7 @@ jobs:
       - yarn install
       - npm run build
       script:
-      - sudo ./node_modules/.bin/nyc --reporter=json --reporter=lcov --reporter=text ./node_modules/.bin/_mocha ./dist/tests/ec2.test.js --grep foo --timeout 20000 --exit
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY AWS_USER_NAME=$AWS_USER_NAME sudo ./node_modules/.bin/nyc --reporter=json --reporter=lcov --reporter=text ./node_modules/.bin/_mocha ./dist/tests/iam.test.js --timeout 20000 --exit
       - sudo mv coverage/coverage-final.json ~/$TRAVIS_BUILD_NUMBER/coverage-ec2.json
       - aws s3 sync ~/$TRAVIS_BUILD_NUMBER s3://dd-cicd/master/$TRAVIS_BUILD_NUMBER
     # =======================
