@@ -1,5 +1,7 @@
 {
 	"port": 8080,
 	"bodyLimit": "100kb",
-	"corsHeaders": ["Link"]
+	"corsHeaders": ["Link"],
+	"ec2ApiVersion": "2016-11-15",
+	"iamApiVersion": "2010-05-08"
 }

@@ -6,3 +6,4 @@
 snippets.js
 yarn.lock
 /secrets
+.eslintrc

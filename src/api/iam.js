@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import {verifyIam} from './iam/index';
-import {creds} from '../lib/util';
+import { verifyIam } from './iam/index';
+import { creds } from '../lib/util';
 
 const router = Router({mergeParams:true});
 
