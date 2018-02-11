@@ -62,6 +62,10 @@ export function workspaceDir(accessKeyId) {
   return `/dd-master/${accessKeyId}`;
 }
 
+export function optsAllPropertiesExist(opts) {
+  return Object.keys(opts).reduce((allExist, key) => opts[key] && allExist, true);
+}
+
 export function creds(req, apiVersion) {
   return {
     accessKeyId: req.body.accessKeyId,

@@ -74,7 +74,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "devbox" do |devbox|
     common_config[devbox]
-    forward_port[8080]
+    forward_port[8080, 8083]
 
     fix_tty[devbox]
     install_common[devbox]
