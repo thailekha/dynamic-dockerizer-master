@@ -3,5 +3,8 @@
 	"bodyLimit": "100kb",
 	"corsHeaders": ["Link"],
 	"ec2ApiVersion": "2016-11-15",
-	"iamApiVersion": "2010-05-08"
+	"iamApiVersion": "2010-05-08",
+	"auth": {
+		"secret": "secret"
+	}
 }
