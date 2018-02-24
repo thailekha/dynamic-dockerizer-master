@@ -12,6 +12,8 @@ function filterRunningInstances(data) {
     .map(i => ({
       InstanceId: i.InstanceId,
       ImageId: i.ImageId,
+      PublicDnsName: i.PublicDnsName,
+      Tags: i.Tags,
       InstanceType: i.InstanceType,
       SubnetId: i.SubnetId,
       VpcId: i.VpcId,
@@ -56,6 +58,82 @@ export function getInstances(accessKeyId, cb) {
       return cb(err);
     }
     cb(null, runningInstances);
+  });
+}
+
+export function getClone(accessKeyId, cb) {
+  let runningInstances, foundClone;
+
+  async.series([
+    function(callback) {
+      targetImportedAndCloned(accessKeyId, (err, {imported, cloned}) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (!imported) {
+          return callback('Target NOT imported');
+        }
+
+        if (!cloned) {
+          return callback('Target NOT cloned');
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      const AWS = require('aws-sdk');
+      AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
+      new AWS.EC2().describeInstances((err, instances) => {
+        if (err) {
+          return callback(err);
+        }
+
+        runningInstances = filterRunningInstances(instances);
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      terraform.show(accessKeyId, 'aws_instance.cloned', (err, output) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (output.trim().length === 0) {
+          return callback('Error finding clone');
+        }
+
+        const cloneOutput = output
+          .split('\n')
+          .filter(line => {
+            const pair = line.split('=');
+            return pair.length === 2 && pair[0].indexOf('id') === 0;
+          })
+          .map(line => line.split('=')[1]);
+
+        if (cloneOutput.length !== 1) {
+          return callback('Error finding clone');
+        }
+
+        const filterredInstances = runningInstances
+          .filter(({InstanceId}) => cloneOutput.filter(cloneId => cloneId.indexOf(InstanceId) > -1).length === 1);
+
+        if (filterredInstances.length !== 1) {
+          return callback('Error finding clone');
+        }
+
+        foundClone = filterredInstances[0];
+        callback(null);
+      });
+    }
+  ],
+  function(err) {
+    if (err) {
+      return cb(err);
+    }
+    cb(null, foundClone);
   });
 }
 

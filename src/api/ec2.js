@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInstances, cloneInstance, targetImportedAndCloned, update } from './ec2/index';
+import { getInstances, cloneInstance, targetImportedAndCloned, update, getClone } from './ec2/index';
 import { create } from './ec2/lib/workspace';
 import jwtAuthenticate from '../middleware/jwt-authenticate';
 import config from '../config.json';
@@ -44,7 +44,6 @@ router.put('/:accessKeyId', (req, res) => {
 });
 
 router.get('/:accessKeyId/instances', (req, res) => {
-  console.log(req.params.accessKeyId);
   getInstances(req.params.accessKeyId, (err, runningInstances) => {
     if (err) {
       return res.status(500).json({'message': err});
@@ -67,6 +66,15 @@ router.get('/:accessKeyId/:InstanceId/clone', (req, res) => {
     }
 
     res.status(200).json({message: `Target imported and cloned`});
+  });
+});
+
+router.get('/:accessKeyId/clone', (req, res) => {
+  getClone(req.params.accessKeyId, (err, foundClone) => {
+    if (err) {
+      return res.status(500).json({'message': err});
+    }
+    res.json({clone: foundClone});
   });
 });
 
