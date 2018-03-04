@@ -22,9 +22,9 @@ describe('process', function() {
     done();
   });
 
-  it('verify IAM credentials', done => {
+  it('Authenticate IAM credentials', done => {
     request(app)
-      .post('/iam/verify')
+      .post('/iam/authenticate')
       .send(credentials)
       .expect('Content-Type', /json/)
       .end(function(err, res) {
