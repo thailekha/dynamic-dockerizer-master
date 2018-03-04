@@ -29,11 +29,11 @@ sudo npm install -g yarn pm2
 
 cd ~
 git clone https://github.com/thailekha/dynamic-dockerizer-agent.git
-cd dynamic-dockerizer-agent && git checkout FH-4669-jwt && yarn install && npm run build && DD_AGENT_PATH=$(pwd)
+cd dynamic-dockerizer-agent && yarn install && npm run build && DD_AGENT_PATH=$(pwd)
 
 cd ~
 git clone https://github.com/thailekha/gantry.git
-cd gantry && git checkout FH-4669-jwt && yarn install && GANTRY_PATH=$(pwd)
+cd gantry && yarn install && GANTRY_PATH=$(pwd)
 
 cd ~
 

@@ -73,3 +73,12 @@ export function creds(req, apiVersion) {
     apiVersion: apiVersion
   };
 }
+
+export function setkeyv(keyv, progressKey, value, cb) {
+  if (keyv && progressKey) {
+    return keyv
+      .set(progressKey, value)
+      .then(() => cb(null));
+  }
+  cb(null);
+}

@@ -1,5 +1,5 @@
 import async from 'async';
-import {logger, shell, workspaceDir} from '../../lib/util';
+import {logger, shell, workspaceDir, setkeyv} from '../../lib/util';
 import * as ws from './lib/workspace';
 import * as terraform from './lib/terraform';
 
@@ -61,7 +61,7 @@ export function getInstances(accessKeyId, cb) {
   });
 }
 
-export function getClone(accessKeyId, cb) {
+export function getClone(keyv, progressKey, accessKeyId, cb) {
   let runningInstances, foundClone;
 
   async.series([
@@ -83,6 +83,9 @@ export function getClone(accessKeyId, cb) {
       });
     },
     function(callback) {
+      setkeyv(keyv, progressKey, 50, callback);
+    },
+    function(callback) {
       const AWS = require('aws-sdk');
       AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
       new AWS.EC2().describeInstances((err, instances) => {
@@ -94,6 +97,9 @@ export function getClone(accessKeyId, cb) {
 
         callback(null);
       });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 40, callback);
     },
     function(callback) {
       terraform.show(accessKeyId, 'aws_instance.cloned', (err, output) => {
