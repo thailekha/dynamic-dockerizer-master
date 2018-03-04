@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { verifyIam } from './iam/index';
 import { creds } from '../lib/util';
+import config from '../config.json';
+import jwt from 'jsonwebtoken';
 
 const router = Router({mergeParams:true});
 
@@ -12,7 +14,7 @@ const router = Router({mergeParams:true});
   *       accessKeyId: { type: string }
   *       secretAccessKey: { type: string }
   *       userName: { type: string }
-  * /iam/verify:
+  * /iam/authenticate:
   *   post:
   *     tags:
   *       - IAM
@@ -32,12 +34,26 @@ const router = Router({mergeParams:true});
   *       '200': { description: 'Valid AWS IAM' }
   *       '404': { description: 'Invalid AWS IAM' }
   */
-router.post('/verify', (req, res) => {
-  verifyIam(creds(req), req.body.userName, (err,data) => {
+router.post('/authenticate', (req, res) => {
+  const credentials = creds(req);
+
+  verifyIam(credentials, req.body.userName, (err, data) => {
     if (err) {
       return res.status(404).send(err);
     }
-    res.json(data);
+
+    const token = jwt.sign(credentials, config.auth.secret, {
+      expiresIn: '48h'
+    });
+
+    const {accessKeyId, secretAccessKey} = credentials;
+
+    res.status(200).json({
+      userName: data.User.UserName,
+      accessKeyId,
+      secretAccessKey,
+      token
+    });
   });
 });
 

@@ -44,9 +44,18 @@ resource "aws_security_group" "cloned" {
   description = "Used for cloned instance"
   vpc_id      = "${var.vpc_id}"
 
+  # agent
   ingress {
     from_port   = 8081
     to_port     = 8081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # gantry
+  ingress {
+    from_port   = 3001
+    to_port     = 3001
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
