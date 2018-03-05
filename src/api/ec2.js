@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInstances, cloneInstance, targetImportedAndCloned, update, getClone } from './ec2/index';
+import { getInstances, cloneInstance, targetImportedAndCloned, update, getClone, getRegions } from './ec2/index';
 import { create } from './ec2/lib/workspace';
 import jwtAuthenticate from '../middleware/jwt-authenticate';
 import progress from '../middleware/progress';
@@ -9,7 +9,18 @@ const router = Router({mergeParams:true});
 
 export default keyv => {
   router.use(jwtAuthenticate({ secret: config.auth.secret }));
+
   router.use(progress(keyv));
+
+  router.get('/:accessKeyId/regions', (req, res) => {
+    getRegions(req.params.accessKeyId, (err, regions) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      res.status(200).json({regions});
+    });
+  });
 
   router.post('/:accessKeyId', (req, res) => {
     const opts = {

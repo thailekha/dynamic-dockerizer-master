@@ -3,6 +3,45 @@ import {logger, shell, workspaceDir, setkeyv} from '../../lib/util';
 import * as ws from './lib/workspace';
 import * as terraform from './lib/terraform';
 
+export function getRegions(accessKeyId, cb) {
+  let regions;
+
+  async.series([
+    function(callback) {
+      ws.validWithoutVars(accessKeyId, (err, basicValid) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (!basicValid) {
+          return callback('Workspace does not exist, please create it first');
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      const AWS = require('aws-sdk');
+      AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
+      new AWS.EC2().describeRegions({},(err, data) => {
+        if (err) {
+          return callback(err);
+        }
+
+        regions = data.Regions.map(region => region.RegionName);
+
+        callback(null);
+      });
+    }
+  ],
+  function(err) {
+    if (err) {
+      return cb(err);
+    }
+    cb(null, regions);
+  });
+}
+
 function filterRunningInstances(data) {
   return data
     .Reservations
