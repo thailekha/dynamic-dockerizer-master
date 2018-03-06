@@ -3,6 +3,45 @@ import {logger, shell, workspaceDir, setkeyv} from '../../lib/util';
 import * as ws from './lib/workspace';
 import * as terraform from './lib/terraform';
 
+export function getRegions(accessKeyId, cb) {
+  let regions;
+
+  async.series([
+    function(callback) {
+      ws.validWithoutVars(accessKeyId, (err, basicValid) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (!basicValid) {
+          return callback('Workspace does not exist, please create it first');
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      const AWS = require('aws-sdk');
+      AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
+      new AWS.EC2().describeRegions({},(err, data) => {
+        if (err) {
+          return callback(err);
+        }
+
+        regions = data.Regions.map(region => region.RegionName);
+
+        callback(null);
+      });
+    }
+  ],
+  function(err) {
+    if (err) {
+      return cb(err);
+    }
+    cb(null, regions);
+  });
+}
+
 function filterRunningInstances(data) {
   return data
     .Reservations
@@ -22,8 +61,9 @@ function filterRunningInstances(data) {
     }));
 }
 
-export function getInstances(accessKeyId, cb) {
+export function getInstances(keyv, progressKey, accessKeyId, cb) {
   let runningInstances;
+  var validWorkspaceWithVars = false;
 
   async.series([
     function(callback) {
@@ -40,6 +80,9 @@ export function getInstances(accessKeyId, cb) {
       });
     },
     function(callback) {
+      setkeyv(keyv, progressKey, 10, callback);
+    },
+    function(callback) {
       const AWS = require('aws-sdk');
       AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
       new AWS.EC2().describeInstances((err, instances) => {
@@ -48,6 +91,88 @@ export function getInstances(accessKeyId, cb) {
         }
 
         runningInstances = filterRunningInstances(instances);
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 20, callback);
+    },
+    function(callback) {
+      ws.validWithVars(accessKeyId, (err, validWorkspace) => {
+        if (!err) {
+          validWorkspaceWithVars = validWorkspace;
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 30, callback);
+    },
+    function(callback) {
+      if (!validWorkspaceWithVars || runningInstances.length === 0) {
+        return callback(null);
+      }
+
+      terraform.show(accessKeyId, 'aws_instance.target', (err, output) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (output.trim().length === 0) {
+          return callback(null);
+        }
+
+        const targetOutput = output
+          .split('\n')
+          .filter(line => {
+            const pair = line.split('=');
+            return pair.length === 2 && pair[0].indexOf('id') === 0;
+          })
+          .map(line => line.split('=')[1]);
+
+        if (targetOutput.length !== 1) {
+          return callback(null);
+        }
+
+        runningInstances = runningInstances
+          .filter(({InstanceId}) => targetOutput.filter(targetId => targetId.indexOf(InstanceId) > -1).length === 0);
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 60, callback);
+    },
+    function(callback) {
+      if (!validWorkspaceWithVars || runningInstances.length === 0) {
+        return callback(null);
+      }
+
+      terraform.show(accessKeyId, 'aws_instance.cloned', (err, output) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (output.trim().length === 0) {
+          return callback(null);
+        }
+
+        const cloneOutput = output
+          .split('\n')
+          .filter(line => {
+            const pair = line.split('=');
+            return pair.length === 2 && pair[0].indexOf('id') === 0;
+          })
+          .map(line => line.split('=')[1]);
+
+        if (cloneOutput.length !== 1) {
+          return callback(null);
+        }
+
+        runningInstances = runningInstances
+          .filter(({InstanceId}) => cloneOutput.filter(cloneId => cloneId.indexOf(InstanceId) > -1).length === 0);
 
         callback(null);
       });
@@ -144,7 +269,7 @@ export function getClone(keyv, progressKey, accessKeyId, cb) {
 }
 
 function getTarget(accessKeyId, InstanceId, cb) {
-  getInstances(accessKeyId, (err, runningInstances) => {
+  getInstances(null, null, accessKeyId, (err, runningInstances) => {
     if (err) {
       return cb(err);
     }
@@ -157,6 +282,16 @@ function getTarget(accessKeyId, InstanceId, cb) {
     }
 
     cb(null, filteredInstances[0]);
+  });
+}
+
+export function updateAwsConfig(accessKeyId, secretAccessKey, region, cb) {
+  ws.writeAwsSdkConfig(accessKeyId, secretAccessKey, region, err => {
+    if (err) {
+      return cb(err);
+    }
+
+    cb(null);
   });
 }
 
@@ -185,7 +320,7 @@ export function update(opts, cb) {
   });
 }
 
-export function cloneInstance(opts, cb) {
+export function cloneInstance(keyv, progressKey, opts, cb) {
   let vars;
   const {accessKeyId, InstanceId} = opts;
 
@@ -204,6 +339,9 @@ export function cloneInstance(opts, cb) {
       });
     },
     function(callback) {
+      setkeyv(keyv, progressKey, 5, callback);
+    },
+    function(callback) {
       ws.readVars(accessKeyId, (err, varsInWorkspace) => {
         if (err) {
           return callback(err);
@@ -212,6 +350,9 @@ export function cloneInstance(opts, cb) {
         vars = varsInWorkspace;
         callback(null);
       });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 10, callback);
     },
     function(callback) {
       getTarget(accessKeyId, InstanceId, (err, foundTarget) => {
@@ -227,6 +368,9 @@ export function cloneInstance(opts, cb) {
       });
     },
     function(callback) {
+      setkeyv(keyv, progressKey, 20, callback);
+    },
+    function(callback) {
       logger.debug('Init');
       terraform.init(accessKeyId, (err, data) => {
         if (err) {
@@ -234,6 +378,9 @@ export function cloneInstance(opts, cb) {
         }
         callback(null, data);
       });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 30, callback);
     },
     function(callback) {
       logger.debug('Show target');
@@ -255,12 +402,18 @@ export function cloneInstance(opts, cb) {
       });
     },
     function(callback) {
+      setkeyv(keyv, progressKey, 40, callback);
+    },
+    function(callback) {
       shell(`chmod 400 ${workspaceDir(accessKeyId)}/keyFile.pem`, err => {
         if (err) {
           return callback(err);
         }
         callback(null);
       });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 45, callback);
     },
     function(callback) {
       logger.debug('Apply');
@@ -271,6 +424,9 @@ export function cloneInstance(opts, cb) {
         }
         callback(null);
       });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 95, callback);
     },
     function(callback) {
       shell(`chmod 664 ${workspaceDir(accessKeyId)}/keyFile.pem`, err => {

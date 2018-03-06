@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInstances, cloneInstance, targetImportedAndCloned, update, getClone } from './ec2/index';
+import { getInstances, cloneInstance, targetImportedAndCloned, update, getClone, getRegions, updateAwsConfig } from './ec2/index';
 import { create } from './ec2/lib/workspace';
 import jwtAuthenticate from '../middleware/jwt-authenticate';
 import progress from '../middleware/progress';
@@ -9,7 +9,28 @@ const router = Router({mergeParams:true});
 
 export default keyv => {
   router.use(jwtAuthenticate({ secret: config.auth.secret }));
+
   router.use(progress(keyv));
+
+  router.get('/:accessKeyId/regions', (req, res) => {
+    getRegions(req.params.accessKeyId, (err, regions) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      res.status(200).json({regions});
+    });
+  });
+
+  router.post('/:accessKeyId/awsconfig', (req, res) => {
+    updateAwsConfig(req.params.accessKeyId, req.body.secretAccessKey, req.body.region, err => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      res.status(200).json({message: `AWS config for ${req.params.accessKeyId} updated`});
+    });
+  });
 
   router.post('/:accessKeyId', (req, res) => {
     const opts = {
@@ -47,7 +68,8 @@ export default keyv => {
   });
 
   router.get('/:accessKeyId/instances', (req, res) => {
-    getInstances(req.params.accessKeyId, (err, runningInstances) => {
+    getInstances(keyv, req.headers['x-dd-progress'], req.params.accessKeyId, (err, runningInstances) => {
+      keyv.delete(req.headers['x-dd-progress']);
       if (err) {
         return res.status(500).json({'message': err});
       }
@@ -63,7 +85,8 @@ export default keyv => {
       InstanceId: req.params.InstanceId
     };
 
-    cloneInstance(opts, err => {
+    cloneInstance(keyv, req.headers['x-dd-progress'], opts, err => {
+      keyv.delete(req.headers['x-dd-progress']);
       if (err) {
         return res.status(500).send(err);
       }

@@ -4,7 +4,7 @@ import jsonfile from 'jsonfile';
 import writeFile from 'write';
 import fileExists from 'file-exists';
 
-function writeAwsSdkConfig(accessKeyId, secretAccessKey, region, cb) {
+export function writeAwsSdkConfig(accessKeyId, secretAccessKey, region, cb) {
   const vars = {
     accessKeyId: accessKeyId,
     secretAccessKey: secretAccessKey,
