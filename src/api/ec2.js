@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInstances, cloneInstance, targetImportedAndCloned, update, getClone, getRegions, updateAwsConfig } from './ec2/index';
+import { getInstances, cloneInstance, targetImportedAndCloned, update, getRegions, updateAwsConfig, getImportedAndCloned, getInstanceFromIP } from './ec2/index';
 import { create } from './ec2/lib/workspace';
 import jwtAuthenticate from '../middleware/jwt-authenticate';
 import progress from '../middleware/progress';
@@ -95,13 +95,23 @@ export default keyv => {
     });
   });
 
-  router.get('/:accessKeyId/clone', (req, res) => {
-    getClone(keyv, req.headers['x-dd-progress'], req.params.accessKeyId, (err, foundClone) => {
+  router.get('/:accessKeyId/instance', (req, res) => {
+    getInstanceFromIP(req.params.accessKeyId, req.query.ip, (err, instance) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      res.status(200).json({instance});
+    });
+  });
+
+  router.get('/:accessKeyId/importedandcloned', (req, res) => {
+    getImportedAndCloned(keyv, req.headers['x-dd-progress'], req.params.accessKeyId, (err, importedAndCloned) => {
       keyv.delete(req.headers['x-dd-progress']);
       if (err) {
         return res.status(500).json({'message': err});
       }
-      res.json({clone: foundClone});
+      res.json(importedAndCloned);
     });
   });
 
