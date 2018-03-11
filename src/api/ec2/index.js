@@ -577,3 +577,80 @@ export function targetImportedAndCloned(accessKeyId, cb) {
     cb(null, {imported, cloned});
   });
 }
+
+export function destroy(keyv, progressKey, accessKeyId, cb) {
+  var imported = true;
+  var cloned = true;
+
+  async.series([
+    function(callback) {
+      ws.validWithVars(accessKeyId, (err, workspaceIsValid) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (!workspaceIsValid) {
+          return callback('Request workspace is not valid');
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 10, callback);
+    },
+    function(callback) {
+      terraform.showMany(accessKeyId, ['aws_instance.target','aws_instance.cloned'], (err, invalidResources) => {
+        if (err) {
+          return callback(err);
+        }
+
+        if (invalidResources.indexOf('aws_instance.target') > -1) {
+          imported = false;
+        }
+
+        if (invalidResources.indexOf('aws_instance.cloned') > -1) {
+          cloned = false;
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 30, callback);
+    },
+    function(callback) {
+      if (!imported || !cloned) {
+        return callback(null);
+      }
+      terraform.forget(accessKeyId, 'aws_instance.target', err => {
+        if (err) {
+          return callback(err);
+        }
+
+        callback(null);
+      });
+    },
+    function(callback) {
+      setkeyv(keyv, progressKey, 50, callback);
+    },
+    function(callback) {
+      if (!imported || !cloned) {
+        return callback(null);
+      }
+      terraform.destroy(accessKeyId, err => {
+        if (err) {
+          return callback(err);
+        }
+
+        callback(null);
+      });
+    }
+  ],
+  function(err) {
+    if (err) {
+      return cb(err);
+    }
+    cb(null);
+  });
+}
