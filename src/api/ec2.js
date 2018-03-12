@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInstances, cloneInstance, targetImportedAndCloned, update, getRegions, updateAwsConfig, getImportedAndCloned, getInstanceFromIP } from './ec2/index';
+import { getInstances, cloneInstance, targetImportedAndCloned, update, getRegions, updateAwsConfig, getImportedAndCloned, getInstanceFromIP, destroy } from './ec2/index';
 import { create } from './ec2/lib/workspace';
 import jwtAuthenticate from '../middleware/jwt-authenticate';
 import progress from '../middleware/progress';
@@ -112,6 +112,16 @@ export default keyv => {
         return res.status(500).json({'message': err});
       }
       res.json(importedAndCloned);
+    });
+  });
+
+  router.delete('/:accessKeyId', (req, res) => {
+    destroy(keyv, req.headers['x-dd-progress'], req.params.accessKeyId, err => {
+      keyv.delete(req.headers['x-dd-progress']);
+      if (err) {
+        return res.status(500).json({'message': err});
+      }
+      res.json({'message': 'Forgot target and destroyed cloned'});
     });
   });
 

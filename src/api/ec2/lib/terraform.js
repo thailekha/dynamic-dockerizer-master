@@ -92,6 +92,15 @@ export function importTarget(accessKeyId, InstanceId, cb) {
   });
 }
 
+export function forget(accessKeyId, resource, cb) {
+  shell(terraformContainerCmd(accessKeyId, `terraform state rm -var-file=sample.tfvars.json ${resource}`), (err, stdout) => {
+    if (err) {
+      return cb(err);
+    }
+    cb(null, stdout);
+  });
+}
+
 export function apply(accessKeyId, cb) {
   shell(terraformContainerCmd(accessKeyId, 'terraform apply -input=false -auto-approve -var-file=sample.tfvars.json'), err => {
     if (err) {
@@ -100,3 +109,13 @@ export function apply(accessKeyId, cb) {
     cb(null);
   });
 }
+
+export function destroy(accessKeyId, cb) {
+  shell(terraformContainerCmd(accessKeyId, 'terraform destroy -force -var-file=sample.tfvars.json'), err => {
+    if (err) {
+      return cb(err);
+    }
+    cb(null);
+  });
+}
+
