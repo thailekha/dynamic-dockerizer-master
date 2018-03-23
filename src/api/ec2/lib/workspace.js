@@ -1,8 +1,9 @@
 import async from 'async';
-import {logger, shell, workspaceDir, optsAllPropertiesExist} from '../../../lib/util';
+import {logger, shell, workspaceDir} from '../../../lib/util';
 import jsonfile from 'jsonfile';
 import writeFile from 'write';
 import fileExists from 'file-exists';
+import statusCodes from 'http-status-codes';
 
 export function writeAwsSdkConfig(accessKeyId, secretAccessKey, region, cb) {
   const vars = {
@@ -13,19 +14,21 @@ export function writeAwsSdkConfig(accessKeyId, secretAccessKey, region, cb) {
 
   jsonfile.writeFile(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`, vars, {spaces: 2}, err => {
     if (err) {
+      const errMsg = 'Failed to create config file for AWS SDK';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
   });
 }
 
-export function create(opts, cb) {
-  const {accessKeyId, secretAccessKey, region} = opts;
-
+export function create(accessKeyId, secretAccessKey, region, cb) {
   async.series([
     function(callback) {
       shell(`mkdir -p ${workspaceDir(accessKeyId)}`, err => {
         if (err) {
+          const errMsg = 'Failed to create workspace folder';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
         callback(null);
@@ -42,6 +45,8 @@ export function create(opts, cb) {
     function(callback) {
       shell(`cp -r ./assets/.terraform ${workspaceDir(accessKeyId)}`, err => {
         if (err) {
+          const errMsg = 'Failed to import terraform assets to workspace';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
         callback(null);
@@ -51,6 +56,8 @@ export function create(opts, cb) {
       const backendConfig = `[default]\naws_access_key_id = ${accessKeyId}\naws_secret_access_key = ${secretAccessKey}`;
       writeFile(`${workspaceDir(accessKeyId)}/shared_credentials`, backendConfig, function(err) {
         if (err) {
+          const errMsg = 'Failed to import target into terraform';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
         callback(null);
@@ -59,6 +66,8 @@ export function create(opts, cb) {
     function(callback) {
       shell(`cp ./assets/clone.tf.json ${workspaceDir(accessKeyId)}`, err => {
         if (err) {
+          const errMsg = 'Failed to import terraform configuration file to workspace';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
         callback(null);
@@ -67,6 +76,8 @@ export function create(opts, cb) {
     function(callback) {
       shell(`cp ./assets/installAgent.sh ${workspaceDir(accessKeyId)}`, err => {
         if (err) {
+          const errMsg = 'Failed to import provision script to workspace';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
         callback(null);
@@ -74,30 +85,20 @@ export function create(opts, cb) {
     }
   ],function(err) {
     if (err) {
+      const errMsg = 'Failed to initialize workspace';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
   });
 }
 
-export function updateVars(opts, cb) {
-  const validOpts = optsAllPropertiesExist(opts);
-
-  if (!validOpts) {
-    return cb('Error updating variables file: invalid opts');
-  }
-
-  const {target, accessKeyId, secretAccessKey, region, keypair_name, keyFile} = opts;
-
+export function updateVars(target, accessKeyId, secretAccessKey, region, keypair_name, keyFile, cb) {
   async.series([
     function(callback) {
-      validWithoutVars(accessKeyId, (err, basicValid) => {
+      validWithoutVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!basicValid) {
-          return callback('Workspace does not exist, please create it first');
         }
 
         callback(null);
@@ -183,7 +184,14 @@ export function validWithoutVars(accessKeyId, cb) {
       return cb(err);
     }
 
-    cb(null, allFilesExist);
+    if (!allFilesExist) {
+      return cb({
+        message: `${accessKeyId} has not been fully setup`,
+        code: statusCodes.SERVICE_UNAVAILABLE
+      });
+    }
+
+    cb(null);
   });
 }
 
@@ -201,7 +209,14 @@ export function validWithVars(accessKeyId, cb) {
       return cb(err);
     }
 
-    cb(null, allFilesExist);
+    if (!allFilesExist) {
+      return cb({
+        message: `${accessKeyId} has not been fully setup`,
+        code: statusCodes.SERVICE_UNAVAILABLE
+      });
+    }
+
+    cb(null);
   });
 }
 

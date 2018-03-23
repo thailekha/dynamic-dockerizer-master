@@ -1,4 +1,6 @@
 import {exec} from 'shelljs';
+import {check, validationResult} from 'express-validator/check';
+import statusCodes from 'http-status-codes';
 
 const VERBOSE = 2;
 const DEBUG = VERBOSE >= 2;
@@ -81,4 +83,22 @@ export function setkeyv(keyv, progressKey, value, cb) {
       .then(() => cb(null));
   }
   cb(null);
+}
+
+export function stringsValidators(strings, customCheck) {
+  // customCheck being null means to check body only
+  return strings.map(str => (customCheck ? customCheck : check)(str).exists().trim().isLength({ min: 1 }));
+}
+
+export function validRequest(req, next) {
+  var errors = validationResult(req).formatWith(({msg}) => msg);
+
+  if (!errors.isEmpty()) {
+    next({
+      errors: errors.mapped(),
+      code: statusCodes.BAD_REQUEST
+    });
+  }
+
+  return errors.isEmpty();
 }

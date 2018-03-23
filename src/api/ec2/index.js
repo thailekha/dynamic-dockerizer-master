@@ -2,19 +2,16 @@ import async from 'async';
 import {logger, shell, workspaceDir, setkeyv} from '../../lib/util';
 import * as ws from './lib/workspace';
 import * as terraform from './lib/terraform';
+import statusCodes from 'http-status-codes';
 
 export function getRegions(accessKeyId, cb) {
   let regions;
 
   async.series([
     function(callback) {
-      ws.validWithoutVars(accessKeyId, (err, basicValid) => {
+      ws.validWithoutVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!basicValid) {
-          return callback('Workspace does not exist, please create it first');
         }
 
         callback(null);
@@ -67,13 +64,9 @@ export function getInstanceFromIP(accessKeyId, ipAddress, cb) {
 
   async.series([
     function(callback) {
-      ws.validWithoutVars(accessKeyId, (err, basicValid) => {
+      ws.validWithoutVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!basicValid) {
-          return callback('Workspace does not exist, please create it first');
         }
 
         callback(null);
@@ -92,7 +85,10 @@ export function getInstanceFromIP(accessKeyId, ipAddress, cb) {
             .filter(i => i.PublicIpAddress === ipAddress);
 
         if (runningInstances.length !== 1) {
-          return callback('Error finding instance');
+          return callback({
+            message: 'Failed to find instance',
+            code: statusCodes.NOT_FOUND
+          });
         }
 
         foundInstance = runningInstances[0];
@@ -115,13 +111,9 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
 
   async.series([
     function(callback) {
-      ws.validWithoutVars(accessKeyId, (err, basicValid) => {
+      ws.validWithoutVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!basicValid) {
-          return callback('Workspace does not exist, please create it first');
         }
 
         callback(null);
@@ -384,9 +376,7 @@ export function updateAwsConfig(accessKeyId, secretAccessKey, region, cb) {
   });
 }
 
-export function update(opts, cb) {
-  const {InstanceId, accessKeyId, secretAccessKey, region, keypair_name, keyFile} = opts;
-
+export function update(InstanceId, accessKeyId, secretAccessKey, region, keypair_name, keyFile, cb) {
   getTarget(accessKeyId, InstanceId, (err, target) => {
     if (err) {
       return cb(err);
@@ -399,7 +389,7 @@ export function update(opts, cb) {
     //   VpcId: 'vpc-d74c32b0',
     //   SecurityGroupsIds: [ 'sg-670c321f' ] }
 
-    ws.updateVars({target, accessKeyId, secretAccessKey, region, keypair_name, keyFile}, err => {
+    ws.updateVars(target, accessKeyId, secretAccessKey, region, keypair_name, keyFile, err => {
       if (err) {
         return cb(err);
       }
@@ -409,19 +399,14 @@ export function update(opts, cb) {
   });
 }
 
-export function cloneInstance(keyv, progressKey, opts, cb) {
+export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
   let vars;
-  const {accessKeyId, InstanceId} = opts;
 
   async.series([
     function(callback) {
-      ws.validWithVars(accessKeyId, (err, validWorkspace) => {
+      ws.validWithVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!validWorkspace) {
-          return callback('Invalid workspace, please create or update it');
         }
 
         callback(null);
@@ -450,7 +435,10 @@ export function cloneInstance(keyv, progressKey, opts, cb) {
         }
 
         if (vars.target_id !== foundTarget.ImageId) {
-          return callback('target_id in workspace does not match the imageid of the target, please update you workspace');
+          return callback({
+            message: 'target_id in workspace does not match the imageid of the target, please update you workspace',
+            code: statusCodes.BAD_REQUEST
+          });
         }
 
         callback(null);
@@ -540,13 +528,9 @@ export function targetImportedAndCloned(accessKeyId, cb) {
 
   async.series([
     function(callback) {
-      ws.validWithVars(accessKeyId, (err, workspaceIsValid) => {
+      ws.validWithVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!workspaceIsValid) {
-          return callback('Request workspace is not valid');
         }
 
         callback(null);
@@ -584,13 +568,9 @@ export function destroy(keyv, progressKey, accessKeyId, cb) {
 
   async.series([
     function(callback) {
-      ws.validWithVars(accessKeyId, (err, workspaceIsValid) => {
+      ws.validWithVars(accessKeyId, err => {
         if (err) {
           return callback(err);
-        }
-
-        if (!workspaceIsValid) {
-          return callback('Request workspace is not valid');
         }
 
         callback(null);

@@ -11,6 +11,8 @@ export function init(accessKeyId, cb) {
   //avoid using replaceAll " to \" for now because of endless loop
   shell(terraformContainerCmd(accessKeyId, 'terraform init -backend-config=\\"shared_credentials_file=shared_credentials\\" -var-file=sample.tfvars.json'), err => {
     if (err) {
+      const errMsg = 'Failed to init terraform';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
@@ -20,6 +22,8 @@ export function init(accessKeyId, cb) {
 export function refresh(accessKeyId, resource, cb) {
   shell(terraformContainerCmd(accessKeyId, `terraform refresh -var-file=sample.tfvars.json -target=${resource}`), err => {
     if (err) {
+      const errMsg = 'Failed to refresh terraform state';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
@@ -42,6 +46,8 @@ export function show(accessKeyId, resource, cb) {
     function(callback) {
       shell(terraformContainerCmd(accessKeyId, `terraform state show -var-file=sample.tfvars.json ${resource}`), (err, stdout) => {
         if (err) {
+          const errMsg = 'Failed to run terraform show';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
 
@@ -78,7 +84,6 @@ export function showMany(accessKeyId, resources, cb) {
     if (err) {
       return cb(err);
     }
-
     cb(null, invalidResources);
   });
 }
@@ -86,6 +91,8 @@ export function showMany(accessKeyId, resources, cb) {
 export function importTarget(accessKeyId, InstanceId, cb) {
   shell(terraformContainerCmd(accessKeyId, `terraform import -var-file=sample.tfvars.json aws_instance.target ${InstanceId}`), err => {
     if (err) {
+      const errMsg = 'Failed to import target into terraform';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
@@ -95,6 +102,8 @@ export function importTarget(accessKeyId, InstanceId, cb) {
 export function forget(accessKeyId, resource, cb) {
   shell(terraformContainerCmd(accessKeyId, `terraform state rm -var-file=sample.tfvars.json ${resource}`), (err, stdout) => {
     if (err) {
+      const errMsg = 'Failed to forget terraform resource';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null, stdout);
@@ -104,6 +113,8 @@ export function forget(accessKeyId, resource, cb) {
 export function apply(accessKeyId, cb) {
   shell(terraformContainerCmd(accessKeyId, 'terraform apply -input=false -auto-approve -var-file=sample.tfvars.json'), err => {
     if (err) {
+      const errMsg = 'Failed to run terraform apply';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
@@ -113,9 +124,10 @@ export function apply(accessKeyId, cb) {
 export function destroy(accessKeyId, cb) {
   shell(terraformContainerCmd(accessKeyId, 'terraform destroy -force -var-file=sample.tfvars.json'), err => {
     if (err) {
+      const errMsg = 'Failed to run terraform destroy';
+      err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
       return cb(err);
     }
     cb(null);
   });
 }
-
