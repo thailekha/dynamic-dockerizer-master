@@ -4,6 +4,7 @@
 	"corsHeaders": ["Link"],
 	"ec2ApiVersion": "2016-11-15",
 	"iamApiVersion": "2010-05-08",
+	"s3ApiVersion": "2006-03-01",
 	"auth": {
 		"secret": "secret"
 	}
