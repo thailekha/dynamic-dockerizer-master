@@ -9,7 +9,7 @@ function terraformContainerCmd(accessKeyId, cmd) {
 
 export function init(accessKeyId, cb) {
   //avoid using replaceAll " to \" for now because of endless loop
-  shell(terraformContainerCmd(accessKeyId, 'terraform init -backend-config=\\"shared_credentials_file=shared_credentials\\" -var-file=sample.tfvars.json'), err => {
+  shell(terraformContainerCmd(accessKeyId, 'terraform init -backend-config=\\"s3_config\\" -backend-config=\\"shared_credentials_file=shared_credentials\\" -var-file=sample.tfvars.json'), err => {
     if (err) {
       const errMsg = 'Failed to init terraform';
       err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;

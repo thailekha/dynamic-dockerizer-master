@@ -56,7 +56,18 @@ export function create(accessKeyId, secretAccessKey, region, cb) {
       const backendConfig = `[default]\naws_access_key_id = ${accessKeyId}\naws_secret_access_key = ${secretAccessKey}`;
       writeFile(`${workspaceDir(accessKeyId)}/shared_credentials`, backendConfig, function(err) {
         if (err) {
-          const errMsg = 'Failed to import target into terraform';
+          const errMsg = 'Failed to create config file for aws ec2 sdk';
+          err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
+          return callback(err);
+        }
+        callback(null);
+      });
+    },
+    function(callback) {
+      const s3config = `bucket="${accessKeyId.toLowerCase()}-dd-state"`;
+      writeFile(`${workspaceDir(accessKeyId)}/s3_config`, s3config, function(err) {
+        if (err) {
+          const errMsg = 'Failed to create config file for aws s3 sdk';
           err.message = err.message ? (err.message += `\n${errMsg}`) : errMsg;
           return callback(err);
         }
@@ -165,7 +176,7 @@ function valid(accessKeyId, files, cb) {
     });
   }, function(err, allFilesExist) {
     if (err) {
-      cb(err);
+      return cb(err);
     }
 
     cb(null, allFilesExist);
@@ -179,6 +190,7 @@ export function validWithoutVars(accessKeyId, cb) {
     `${workspace}/clone.tf.json`,
     `${workspace}/installAgent.sh`,
     `${workspace}/shared_credentials`,
+    `${workspace}/s3_config`,
   ], (err, allFilesExist) => {
     if (err) {
       return cb(err);
@@ -204,6 +216,7 @@ export function validWithVars(accessKeyId, cb) {
     `${workspace}/keyFile.pem`,
     `${workspace}/sample.tfvars.json`,
     `${workspace}/shared_credentials`,
+    `${workspace}/s3_config`,
   ], (err, allFilesExist) => {
     if (err) {
       return cb(err);

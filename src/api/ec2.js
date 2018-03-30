@@ -26,22 +26,6 @@ export default keyv => {
     });
   });
 
-  router.post('/:accessKeyId/awsconfig',
-    stringsValidators(['secretAccessKey','region'], buildCheckFunction(['body'])),
-    (req, res, next) => {
-      if (!validRequest(req,next)) {
-        return;
-      }
-
-      updateAwsConfig(req.params.accessKeyId, req.body.secretAccessKey, req.body.region, err => {
-        if (err) {
-          return next(err);
-        }
-
-        res.json({message: `AWS config for ${req.params.accessKeyId} updated`});
-      });
-    });
-
   router.post('/:accessKeyId',
     stringsValidators(['secretAccessKey','region'], buildCheckFunction(['body'])),
     (req, res, next) => {
@@ -55,6 +39,22 @@ export default keyv => {
         }
 
         res.json({message: `Workspace for ${req.params.accessKeyId} created`});
+      });
+    });
+
+  router.post('/:accessKeyId/awsconfig',
+    stringsValidators(['secretAccessKey','region'], buildCheckFunction(['body'])),
+    (req, res, next) => {
+      if (!validRequest(req,next)) {
+        return;
+      }
+
+      updateAwsConfig(req.params.accessKeyId, req.body.secretAccessKey, req.body.region, err => {
+        if (err) {
+          return next(err);
+        }
+
+        res.json({message: `AWS config for ${req.params.accessKeyId} updated`});
       });
     });
 

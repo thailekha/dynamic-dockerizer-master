@@ -139,16 +139,25 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
       setkeyv(keyv, progressKey, 20, callback);
     },
     function(callback) {
-      ws.validWithVars(accessKeyId, (err, validWorkspace) => {
-        if (!err) {
-          validWorkspaceWithVars = validWorkspace;
-        }
-
+      ws.validWithVars(accessKeyId, err => {
+        validWorkspaceWithVars = !err;
         callback(null);
       });
     },
     function(callback) {
       setkeyv(keyv, progressKey, 30, callback);
+    },
+    function(callback) {
+      if (!validWorkspaceWithVars || runningInstances.length === 0) {
+        return callback(null);
+      }
+
+      terraform.init(accessKeyId, err => {
+        if (err) {
+          return callback(err);
+        }
+        callback(null);
+      });
     },
     function(callback) {
       if (!validWorkspaceWithVars || runningInstances.length === 0) {
@@ -222,6 +231,11 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
     if (err) {
       return cb(err);
     }
+    runningInstances = runningInstances.map(i => {
+      i.Tags = i.Tags.map(tag => `${tag.Key}: ${tag.Value}`);
+      return i;
+    });
+
     cb(null, runningInstances);
   });
 }
@@ -232,10 +246,8 @@ export function getImportedAndCloned(keyv, progressKey, accessKeyId, cb) {
 
   async.series([
     function(callback) {
-      ws.validWithVars(accessKeyId, (err, validWorkspace) => {
-        if (!err) {
-          validWorkspaceWithVars = validWorkspace;
-        }
+      ws.validWithVars(accessKeyId, err => {
+        validWorkspaceWithVars = !err;
 
         callback(null);
       });
