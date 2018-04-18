@@ -10,7 +10,7 @@ const router = Router({mergeParams:true});
 /**
   * @swagger
   * definition:
-  *   verifyIamParams:
+  *   authenticateIamParams:
   *     properties:
   *       accessKeyId: { type: string }
   *       secretAccessKey: { type: string }
@@ -19,21 +19,20 @@ const router = Router({mergeParams:true});
   *   post:
   *     tags:
   *       - IAM
-  *     summary: 'Verify an IAM credential'
+  *     summary: 'Authenticate with an IAM credential'
   *     description:
-  *     operationId: verifyIam
+  *     operationId: authenticateIam
   *     produces:
   *       - application/json
   *     parameters:
-  *       - schema: { $ref: '#/definitions/verifyIamParams' }
+  *       - schema: { $ref: '#/definitions/authenticateIamParams' }
   *         in: body
   *         name: 'IAM credential'
   *         type: object
   *         description: 'The IAM credential to be verified'
   *         required: true
   *     responses:
-  *       '200': { description: 'Valid AWS IAM' }
-  *       '404': { description: 'Invalid AWS IAM' }
+  *       '200': { description: 'Ok' }
   */
 router.post('/authenticate',
   stringsValidators(['accessKeyId','secretAccessKey','userName'], buildCheckFunction(['body'])),
