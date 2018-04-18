@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInstances, cloneInstance, targetImportedAndCloned, update, getRegions, updateAwsConfig, getImportedAndCloned, getInstanceFromIP, destroy } from './ec2/index';
+import { getInstances, cloneInstance, update, getRegions, updateAwsConfig, getImportedAndCloned, destroy } from './ec2/index';
 import { create } from './ec2/lib/workspace';
 import jwtAuthenticate from '../middleware/jwt-authenticate';
 import progress from '../middleware/progress';
@@ -268,22 +268,6 @@ export default keyv => {
     });
   });
 
-  router.get('/:accessKeyId/instance',
-    stringsValidators(['ip'], buildCheckFunction(['query'])),
-    (req, res, next) => {
-      if (!validRequest(req,next)) {
-        return;
-      }
-
-      getInstanceFromIP(req.params.accessKeyId, req.query.ip, (err, instance) => {
-        if (err) {
-          return next(err);
-        }
-
-        res.json({instance});
-      });
-    });
-
   /**
     * @swagger
     * /ec2/{accessKeyId}/importedandcloned:
@@ -344,30 +328,6 @@ export default keyv => {
         return next(err);
       }
       res.json({'message': 'Forgot target and destroyed cloned'});
-    });
-  });
-
-  router.get('/:accessKeyId/:InstanceId/verify', (req, res, next) => {
-    targetImportedAndCloned(req.params.accessKeyId, (err, {imported, cloned}) => {
-      if (err) {
-        return next(err);
-      }
-
-      if (!imported) {
-        return next({
-          code: statusCodes.BAD_REQUEST,
-          message: `Target NOT imported`
-        });
-      }
-
-      if (!cloned) {
-        return next({
-          code: statusCodes.BAD_REQUEST,
-          message: `Target NOT cloned`
-        });
-      }
-
-      res.json({message: `Target imported and cloned`});
     });
   });
 

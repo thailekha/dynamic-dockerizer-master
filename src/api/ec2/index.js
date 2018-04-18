@@ -59,52 +59,6 @@ function filterRunningInstances(data) {
     }));
 }
 
-export function getInstanceFromIP(accessKeyId, ipAddress, cb) {
-  let foundInstance;
-
-  async.series([
-    function(callback) {
-      ws.validWithoutVars(accessKeyId, err => {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null);
-      });
-    },
-    function(callback) {
-      const AWS = require('aws-sdk');
-      AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
-      new AWS.EC2().describeInstances((err, instances) => {
-        if (err) {
-          return callback(err);
-        }
-
-        const runningInstances =
-          filterRunningInstances(instances)
-            .filter(i => i.PublicIpAddress === ipAddress);
-
-        if (runningInstances.length !== 1) {
-          return callback({
-            message: 'Failed to find instance',
-            code: statusCodes.NOT_FOUND
-          });
-        }
-
-        foundInstance = runningInstances[0];
-
-        callback(null);
-      });
-    },
-  ],
-  function(err) {
-    if (err) {
-      return cb(err);
-    }
-    cb(null, foundInstance);
-  });
-}
-
 export function getInstances(keyv, progressKey, accessKeyId, cb) {
   let runningInstances;
   var validWorkspaceWithVars = false;
@@ -531,46 +485,6 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
     }
 
     cb(null);
-  });
-}
-
-export function targetImportedAndCloned(accessKeyId, cb) {
-  var imported = true;
-  var cloned = true;
-
-  async.series([
-    function(callback) {
-      ws.validWithVars(accessKeyId, err => {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null);
-      });
-    },
-    function(callback) {
-      terraform.showMany(accessKeyId, ['aws_instance.target','aws_instance.cloned'], (err, invalidResources) => {
-        if (err) {
-          return callback(err);
-        }
-
-        if (invalidResources.indexOf('aws_instance.target') > -1) {
-          imported = false;
-        }
-
-        if (invalidResources.indexOf('aws_instance.cloned') > -1) {
-          cloned = false;
-        }
-
-        callback(null);
-      });
-    }
-  ],
-  function(err) {
-    if (err) {
-      return cb(err);
-    }
-    cb(null, {imported, cloned});
   });
 }
 
