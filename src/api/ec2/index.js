@@ -1,5 +1,5 @@
 import async from 'async';
-import {logger, shell, workspaceDir, setkeyv} from '../../lib/util';
+import {logger, shell, workspaceDir, injectSetkeyv} from '../../lib/util';
 import * as ws from './lib/workspace';
 import * as terraform from './lib/terraform';
 import statusCodes from 'http-status-codes';
@@ -59,57 +59,11 @@ function filterRunningInstances(data) {
     }));
 }
 
-export function getInstanceFromIP(accessKeyId, ipAddress, cb) {
-  let foundInstance;
-
-  async.series([
-    function(callback) {
-      ws.validWithoutVars(accessKeyId, err => {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null);
-      });
-    },
-    function(callback) {
-      const AWS = require('aws-sdk');
-      AWS.config.loadFromPath(`${workspaceDir(accessKeyId)}/aws_ec2_config.json`);
-      new AWS.EC2().describeInstances((err, instances) => {
-        if (err) {
-          return callback(err);
-        }
-
-        const runningInstances =
-          filterRunningInstances(instances)
-            .filter(i => i.PublicIpAddress === ipAddress);
-
-        if (runningInstances.length !== 1) {
-          return callback({
-            message: 'Failed to find instance',
-            code: statusCodes.NOT_FOUND
-          });
-        }
-
-        foundInstance = runningInstances[0];
-
-        callback(null);
-      });
-    },
-  ],
-  function(err) {
-    if (err) {
-      return cb(err);
-    }
-    cb(null, foundInstance);
-  });
-}
-
 export function getInstances(keyv, progressKey, accessKeyId, cb) {
   let runningInstances;
   var validWorkspaceWithVars = false;
 
-  async.series([
+  async.series(injectSetkeyv(keyv, progressKey,[
     function(callback) {
       ws.validWithoutVars(accessKeyId, err => {
         if (err) {
@@ -118,9 +72,6 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
 
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 10, callback);
     },
     function(callback) {
       const AWS = require('aws-sdk');
@@ -136,16 +87,10 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 20, callback);
-    },
-    function(callback) {
       ws.validWithVars(accessKeyId, err => {
         validWorkspaceWithVars = !err;
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 30, callback);
     },
     function(callback) {
       if (!validWorkspaceWithVars || runningInstances.length === 0) {
@@ -192,9 +137,6 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 60, callback);
-    },
-    function(callback) {
       if (!validWorkspaceWithVars || runningInstances.length === 0) {
         return callback(null);
       }
@@ -226,7 +168,7 @@ export function getInstances(keyv, progressKey, accessKeyId, cb) {
         callback(null);
       });
     }
-  ],
+  ]),
   function(err) {
     if (err) {
       return cb(err);
@@ -244,16 +186,13 @@ export function getImportedAndCloned(keyv, progressKey, accessKeyId, cb) {
   let runningInstances, imported, cloned;
   var validWorkspaceWithVars = false;
 
-  async.series([
+  async.series(injectSetkeyv(keyv, progressKey,[
     function(callback) {
       ws.validWithVars(accessKeyId, err => {
         validWorkspaceWithVars = !err;
 
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 5, callback);
     },
     function(callback) {
       if (!validWorkspaceWithVars) {
@@ -271,9 +210,6 @@ export function getImportedAndCloned(keyv, progressKey, accessKeyId, cb) {
 
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 20, callback);
     },
     function(callback) {
       if (!validWorkspaceWithVars) {
@@ -313,9 +249,6 @@ export function getImportedAndCloned(keyv, progressKey, accessKeyId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 60, callback);
-    },
-    function(callback) {
       if (!validWorkspaceWithVars) {
         return callback(null);
       }
@@ -352,12 +285,12 @@ export function getImportedAndCloned(keyv, progressKey, accessKeyId, cb) {
         callback(null);
       });
     }
-  ],
+  ]),
   function(err) {
     if (err) {
       return cb(err);
     }
-    cb(null, {imported, cloned});
+    cb(null, {imported: imported || null, cloned: cloned || null});
   });
 }
 
@@ -414,7 +347,7 @@ export function update(InstanceId, accessKeyId, secretAccessKey, region, keypair
 export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
   let vars;
 
-  async.series([
+  async.series(injectSetkeyv(keyv, progressKey,[
     function(callback) {
       ws.validWithVars(accessKeyId, err => {
         if (err) {
@@ -425,9 +358,6 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 5, callback);
-    },
-    function(callback) {
       ws.readVars(accessKeyId, (err, varsInWorkspace) => {
         if (err) {
           return callback(err);
@@ -436,9 +366,6 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
         vars = varsInWorkspace;
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 10, callback);
     },
     function(callback) {
       getTarget(accessKeyId, InstanceId, (err, foundTarget) => {
@@ -457,9 +384,6 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 20, callback);
-    },
-    function(callback) {
       logger.debug('Init');
       terraform.init(accessKeyId, (err, data) => {
         if (err) {
@@ -467,9 +391,6 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
         }
         callback(null, data);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 30, callback);
     },
     function(callback) {
       logger.debug('Show target');
@@ -491,18 +412,12 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 40, callback);
-    },
-    function(callback) {
       shell(`chmod 400 ${workspaceDir(accessKeyId)}/keyFile.pem`, err => {
         if (err) {
           return callback(err);
         }
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 45, callback);
     },
     function(callback) {
       logger.debug('Apply');
@@ -515,9 +430,6 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 95, callback);
-    },
-    function(callback) {
       shell(`chmod 664 ${workspaceDir(accessKeyId)}/keyFile.pem`, err => {
         if (err) {
           return callback(err);
@@ -525,7 +437,8 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
         callback(null);
       });
     }
-  ], function(err) {
+  ]),
+  function(err) {
     if (err) {
       return cb(err);
     }
@@ -534,51 +447,11 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
   });
 }
 
-export function targetImportedAndCloned(accessKeyId, cb) {
-  var imported = true;
-  var cloned = true;
-
-  async.series([
-    function(callback) {
-      ws.validWithVars(accessKeyId, err => {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null);
-      });
-    },
-    function(callback) {
-      terraform.showMany(accessKeyId, ['aws_instance.target','aws_instance.cloned'], (err, invalidResources) => {
-        if (err) {
-          return callback(err);
-        }
-
-        if (invalidResources.indexOf('aws_instance.target') > -1) {
-          imported = false;
-        }
-
-        if (invalidResources.indexOf('aws_instance.cloned') > -1) {
-          cloned = false;
-        }
-
-        callback(null);
-      });
-    }
-  ],
-  function(err) {
-    if (err) {
-      return cb(err);
-    }
-    cb(null, {imported, cloned});
-  });
-}
-
 export function destroy(keyv, progressKey, accessKeyId, cb) {
   var imported = true;
   var cloned = true;
 
-  async.series([
+  async.series(injectSetkeyv(keyv, progressKey,[
     function(callback) {
       ws.validWithVars(accessKeyId, err => {
         if (err) {
@@ -587,9 +460,6 @@ export function destroy(keyv, progressKey, accessKeyId, cb) {
 
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 10, callback);
     },
     function(callback) {
       terraform.showMany(accessKeyId, ['aws_instance.target','aws_instance.cloned'], (err, invalidResources) => {
@@ -607,9 +477,6 @@ export function destroy(keyv, progressKey, accessKeyId, cb) {
 
         callback(null);
       });
-    },
-    function(callback) {
-      setkeyv(keyv, progressKey, 30, callback);
     },
     function(callback) {
       if (!imported || !cloned) {
@@ -624,9 +491,6 @@ export function destroy(keyv, progressKey, accessKeyId, cb) {
       });
     },
     function(callback) {
-      setkeyv(keyv, progressKey, 50, callback);
-    },
-    function(callback) {
       if (!imported || !cloned) {
         return callback(null);
       }
@@ -638,7 +502,7 @@ export function destroy(keyv, progressKey, accessKeyId, cb) {
         callback(null);
       });
     }
-  ],
+  ]),
   function(err) {
     if (err) {
       return cb(err);

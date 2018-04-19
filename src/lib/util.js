@@ -76,13 +76,28 @@ export function creds(req, apiVersion) {
   };
 }
 
-export function setkeyv(keyv, progressKey, value, cb) {
+function setkeyv(keyv, progressKey, value, cb) {
   if (keyv && progressKey) {
     return keyv
       .set(progressKey, value)
       .then(() => cb(null));
   }
   cb(null);
+}
+
+export function injectSetkeyv(keyv, progressKey, asyncCallbacks) {
+  if (keyv && progressKey) {
+    const injected = [];
+    asyncCallbacks.forEach((ac, index, all) => {
+      const progress = Math.round(index * 100 / all.length);
+      injected.push(function(callback) {
+        setkeyv(keyv, progressKey, progress, callback);
+      });
+      injected.push(ac);
+    });
+    return injected;
+  }
+  return asyncCallbacks;
 }
 
 export function stringsValidators(strings, customCheck) {

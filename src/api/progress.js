@@ -8,6 +8,26 @@ const router = Router({mergeParams:true});
 export default keyv => {
   router.use(jwtAuthenticate({ secret: config.auth.secret }));
 
+  /**
+    * @swagger
+    * /status/{progresskey}:
+    *   get:
+    *     tags:
+    *       - Progress
+    *     summary: 'Check progress of a running task given a progress key identifying the task'
+    *     description:
+    *     operationId: checkProgress
+    *     produces:
+    *       - application/json
+    *     responses:
+    *       '200':
+    *         description: 'Ok'
+    *         schema:
+    *             type: object
+    *             properties:
+    *                 status:
+    *                     example: 80
+    */
   router.get('/status/:progresskey', (req, res, next) => {
     keyv
       .get(req.params.progresskey)
@@ -19,8 +39,27 @@ export default keyv => {
       });
   });
 
+  /**
+    * @swagger
+    * /status/generate:
+    *   get:
+    *     tags:
+    *       - Progress
+    *     summary: 'Generate a progress key'
+    *     description:
+    *     operationId: checkProgress
+    *     produces:
+    *       - application/json
+    *     responses:
+    *       '200':
+    *         description: 'Ok'
+    *         schema:
+    *             type: object
+    *             properties:
+    *                 key:
+    *                     type: string
+    */
   router.get('/generate', (req, res) => {
-    console.log('Generating');
     res.json({key: shortid.generate()});
   });
 
