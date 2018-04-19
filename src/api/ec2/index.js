@@ -290,7 +290,7 @@ export function getImportedAndCloned(keyv, progressKey, accessKeyId, cb) {
     if (err) {
       return cb(err);
     }
-    cb(null, {imported, cloned});
+    cb(null, {imported: imported || null, cloned: cloned || null});
   });
 }
 
