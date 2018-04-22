@@ -15,7 +15,7 @@ sudo apt-get update
 sudo apt-get -y install git dpkg-repack tree build-essential apt-rdepends
 
 # Install Docker
-if ! installed "docker -v"
+if ! installed "sudo docker -v"
 	then
 	sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
 	sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
@@ -25,6 +25,10 @@ if ! installed "docker -v"
 	sudo apt-get install -y docker-ce
 	sudo docker --version
 fi
+
+cd / && sudo tar -c --exclude=mnt --exclude=sys --exclude=proc --exclude=dev --exclude=var/lib/docker . | sudo docker import - vmimage
+
+sudo docker pull docker
 
 # Install Node.js
 if ! installed "node -v"
