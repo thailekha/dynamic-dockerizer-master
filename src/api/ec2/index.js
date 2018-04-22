@@ -422,7 +422,7 @@ export function cloneInstance(keyv, progressKey, accessKeyId, InstanceId, cb) {
     function(callback) {
       logger.debug('Apply');
       terraform.apply(accessKeyId, err => {
-        // if terraform command time out, no response is returned by express, why?
+        // if terraform command time out, no response is returned by express
         if (err) {
           return callback(err);
         }

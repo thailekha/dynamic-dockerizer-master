@@ -1,4 +1,3 @@
-// import assert from 'assert';
 import request from 'supertest';
 import app from '../index';
 import chai from 'chai';
